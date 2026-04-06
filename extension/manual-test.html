@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Prueba manual - Pre-Upload Mosaic Censor</title>
+    <style>
+      body { font-family: system-ui, sans-serif; margin: 2rem; }
+      .card { max-width: 700px; padding: 1rem; border: 1px solid #ddd; border-radius: 8px; }
+      .preview { margin-top: 1rem; }
+      img { max-width: 100%; border: 1px solid #ccc; border-radius: 6px; }
+      .muted { color: #666; }
+    </style>
+  </head>
+  <body>
+    <div class="card">
+      <h1>Prueba manual de intercepción de archivo</h1>
+      <p class="muted">Selecciona una imagen. La extensión debe abrir el editor antes de que el input quede cargado.</p>
+
+      <input id="fileInput" type="file" accept="image/*" />
+      <button id="submitBtn" type="button">Simular upload</button>
+
+      <div class="preview">
+        <p><strong>Resultado en el input:</strong> <span id="fileInfo">(sin archivo)</span></p>
+        <img id="imgPreview" alt="Preview" hidden />
+      </div>
+    </div>
+
+    <script>
+      const fileInput = document.getElementById('fileInput');
+      const fileInfo = document.getElementById('fileInfo');
+      const imgPreview = document.getElementById('imgPreview');
+      const submitBtn = document.getElementById('submitBtn');
+
+      function refreshPreview() {
+        const f = fileInput.files && fileInput.files[0];
+        if (!f) {
+          fileInfo.textContent = '(sin archivo)';
+          imgPreview.hidden = true;
+          imgPreview.removeAttribute('src');
+          return;
+        }
+
+        fileInfo.textContent = `${f.name} — ${f.type} — ${f.size} bytes`;
+        const reader = new FileReader();
+        reader.onload = () => {
+          imgPreview.src = reader.result;
+          imgPreview.hidden = false;
+        };
+        reader.readAsDataURL(f);
+      }
+
+      fileInput.addEventListener('change', refreshPreview);
+      submitBtn.addEventListener('click', () => {
+        const f = fileInput.files && fileInput.files[0];
+        if (!f) {
+          alert('No hay archivo para subir.');
+          return;
+        }
+        alert(`Archivo listo para upload: ${f.name}\nTipo: ${f.type}\nTamaño: ${f.size} bytes`);
+      });
+    </script>
+  </body>
+</html>

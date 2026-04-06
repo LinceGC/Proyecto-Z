@@ -1,72 +1,54 @@
 (() => {
   const state = {
     activeInput: null,
-    originalFiles: [],
+    originalFile: null,
     dialogHost: null,
     dialogEl: null,
     resolver: null,
     suppressNextInputEvent: false
   };
 
-  const readFileAsDataUrl = (file) =>
-    new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => resolve(reader.result);
-      reader.onerror = () => reject(reader.error || new Error('Failed to read file'));
-      reader.readAsDataURL(file);
-    });
+  const openEditorForFile = (file, input) => {
+    return new Promise((resolve) => {
+      state.activeInput = input;
+      state.originalFile = file;
+      state.resolver = resolve;
 
-  const openEditorForFiles = async (files, input) => {
-    return new Promise(async (resolve, reject) => {
-      try {
-        state.activeInput = input;
-        state.originalFiles = files;
-        state.resolver = resolve;
+      const host = document.createElement('div');
+      host.style.position = 'fixed';
+      host.style.inset = '0';
+      host.style.zIndex = '2147483647';
+      host.style.background = 'rgba(0, 0, 0, 0.25)';
+      document.documentElement.appendChild(host);
+      state.dialogHost = host;
 
-        const host = document.createElement('div');
-        host.style.position = 'fixed';
-        host.style.inset = '0';
-        host.style.zIndex = '2147483647';
-        host.style.background = 'rgba(0, 0, 0, 0.25)';
-        document.documentElement.appendChild(host);
-        state.dialogHost = host;
+      const iframe = document.createElement('iframe');
+      iframe.src = chrome.runtime.getURL('editor.html');
+      iframe.style.border = 'none';
+      iframe.style.width = '100%';
+      iframe.style.height = '100%';
+      iframe.style.display = 'block';
+      iframe.setAttribute('title', 'Mosaic Censorship Editor');
+      host.appendChild(iframe);
+      state.dialogEl = iframe;
 
-        const iframe = document.createElement('iframe');
-        iframe.src = chrome.runtime.getURL('editor.html');
-        iframe.style.border = 'none';
-        iframe.style.width = '100%';
-        iframe.style.height = '100%';
-        iframe.style.display = 'block';
-        iframe.setAttribute('title', 'Mosaic Censorship Editor');
-        host.appendChild(iframe);
-        state.dialogEl = iframe;
-
-        const payloadFiles = await Promise.all(
-          files.map(async (file) => ({
-            name: file.name,
-            mimeType: file.type,
-            dataUrl: await readFileAsDataUrl(file)
-          }))
-        );
-
-        iframe.addEventListener(
-          'load',
-          () => {
-            iframe.contentWindow.postMessage(
-              {
-                type: 'MOSAIC_EDITOR_INIT',
-                payload: {
-                  files: payloadFiles
-                }
-              },
-              '*'
-            );
-          },
-          { once: true }
-        );
-      } catch (error) {
-        reject(error);
-      }
+      iframe.addEventListener('load', () => {
+        const reader = new FileReader();
+        reader.onload = () => {
+          iframe.contentWindow.postMessage(
+            {
+              type: 'MOSAIC_EDITOR_INIT',
+              payload: {
+                name: file.name,
+                mimeType: file.type,
+                dataUrl: reader.result
+              }
+            },
+            '*'
+          );
+        };
+        reader.readAsDataURL(file);
+      }, { once: true });
     });
   };
 
@@ -75,17 +57,15 @@
       state.dialogHost.parentNode.removeChild(state.dialogHost);
     }
     state.activeInput = null;
-    state.originalFiles = [];
+    state.originalFile = null;
     state.dialogHost = null;
     state.dialogEl = null;
     state.resolver = null;
   };
 
-  const replaceFilesOnInput = (input, newFiles) => {
+  const replaceFileOnInput = (input, newFile) => {
     const dt = new DataTransfer();
-    for (const file of newFiles) {
-      dt.items.add(file);
-    }
+    dt.items.add(newFile);
 
     state.suppressNextInputEvent = true;
     input.files = dt.files;
@@ -100,11 +80,12 @@
     }
 
     const { files } = input;
-    if (!files || files.length < 1) {
+    if (!files || files.length !== 1) {
       return false;
     }
 
-    return Array.from(files).every((file) => file && typeof file.type === 'string' && file.type.startsWith('image/'));
+    const file = files[0];
+    return file && typeof file.type === 'string' && file.type.startsWith('image/');
   };
 
   window.addEventListener('message', (event) => {
@@ -125,41 +106,29 @@
     }
 
     if (msg.type === 'MOSAIC_EDITOR_CONFIRM') {
-      const { files } = msg.payload || {};
-
-      if (!Array.isArray(files) || files.length < 1 || !state.activeInput) {
+      const { blobBase64, fileName } = msg.payload || {};
+      if (!blobBase64 || !state.activeInput || !state.originalFile) {
         const resolver = state.resolver;
         closeEditor();
         if (resolver) resolver({ canceled: true, error: 'invalid-payload' });
         return;
       }
 
-      const rebuiltFiles = files
-        .filter((f) => f && typeof f.blobBase64 === 'string' && f.blobBase64.length > 0)
-        .map((f, index) => {
-          const binary = atob(f.blobBase64);
-          const bytes = new Uint8Array(binary.length);
-          for (let i = 0; i < binary.length; i += 1) {
-            bytes[i] = binary.charCodeAt(i);
-          }
-
-          const fallbackName = state.originalFiles[index]?.name || `image-${index + 1}.png`;
-          return new File([bytes], f.fileName || fallbackName, {
-            type: 'image/png'
-          });
-        });
-
-      if (rebuiltFiles.length < 1) {
-        const resolver = state.resolver;
-        closeEditor();
-        if (resolver) resolver({ canceled: true, error: 'empty-output' });
-        return;
+      const binary = atob(blobBase64);
+      const len = binary.length;
+      const bytes = new Uint8Array(len);
+      for (let i = 0; i < len; i += 1) {
+        bytes[i] = binary.charCodeAt(i);
       }
+
+      const newFile = new File([bytes], fileName || state.originalFile.name, {
+        type: 'image/png'
+      });
 
       const input = state.activeInput;
       const resolver = state.resolver;
       closeEditor();
-      replaceFilesOnInput(input, rebuiltFiles);
+      replaceFileOnInput(input, newFile);
       if (resolver) resolver({ canceled: false });
     }
   });
@@ -184,10 +153,11 @@
       event.preventDefault();
       event.stopImmediatePropagation();
 
-      const files = Array.from(input.files || []);
+      const file = input.files[0];
       try {
-        await openEditorForFiles(files, input);
+        await openEditorForFile(file, input);
       } catch (err) {
+        // If editor fails, keep original file selected.
         console.error('Failed to open mosaic editor:', err);
       }
     },

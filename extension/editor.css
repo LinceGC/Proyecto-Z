@@ -48,7 +48,7 @@ body {
   margin: 3px 0 0;
   font-size: 0.85rem;
   color: var(--muted);
-  max-width: 32vw;
+  max-width: 42vw;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -58,21 +58,6 @@ body {
   display: flex;
   align-items: center;
   gap: 8px;
-  flex-wrap: wrap;
-}
-
-.nav-controls {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.index-pill {
-  padding: 5px 8px;
-  border-radius: 8px;
-  border: 1px solid #4b5563;
-  color: var(--muted);
-  font-size: 0.8rem;
 }
 
 .mosaic-control {
@@ -111,11 +96,6 @@ button.ghost {
   border: 1px solid #4b5563;
 }
 
-button:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
 .canvas-wrap {
   position: relative;
   overflow: auto;
@@ -140,12 +120,4 @@ button:disabled {
   border-top: 1px solid #374151;
   padding: 10px 16px;
   background: var(--panel);
-}
-
-.credit {
-  white-space: nowrap;
-}
-
-.credit strong {
-  color: #c7d2fe;
 }

@@ -11,27 +11,27 @@ Extensión de Chrome/Edge que intercepta imágenes en `<input type="file">`, abr
 3. Haz clic en **Load unpacked / Cargar descomprimida**.
 4. Selecciona la carpeta `extension/` de este repo.
 
-## Cómo probarla manualmente (múltiples imágenes)
+## Cómo probarla manualmente
 
-1. Abre el archivo `extension/manual-test.html` en el navegador.
-2. Selecciona varias imágenes en un input con `multiple`.
-3. Debe abrirse **un solo editor** con navegación por imagen (Prev/Next).
-4. En cada imagen, dibuja rectángulos con mouse:
+1. Abre el archivo `extension/manual-test.html` en el navegador (doble clic o arrastrar al navegador).
+2. Pulsa en el input y selecciona una imagen.
+3. Debe abrirse el editor de censura.
+4. Dibuja rectángulos con mouse:
    - `mousedown` inicia
    - `mousemove` previsualiza
    - `mouseup` confirma el rectángulo
-5. Usa **Undo Last** o tecla `R` para deshacer en la imagen actual.
-6. Pulsa **Confirm All** para exportar todas las imágenes editadas y reemplazar el input.
+5. Verifica preview en vivo pixelado.
+6. Prueba controles:
+   - **Undo Last** o tecla `R`
+   - **Cancel**
+   - **Confirm**
+7. Al confirmar, el archivo del input debe quedar reemplazado por PNG censurado.
 
 ## Checklist rápido de validación
 
-- [ ] Intercepta 1 o múltiples imágenes
-- [ ] Editor único con navegación Prev/Next
-- [ ] Cada imagen conserva sus propios rectángulos
+- [ ] Solo intercepta cuando hay 1 archivo imagen
+- [ ] Rectángulos invertidos (drag en reversa) funcionan
+- [ ] Regiones inválidas/tiny se ignoran
+- [ ] Se pueden apilar múltiples rectángulos
 - [ ] Mosaico por defecto en 15 y configurable
-- [ ] Preview del editor coincide con resultado final
-- [ ] El input queda reemplazado con todos los archivos censurados
-
-## Créditos
-
-Creado por **HeyKhana**.
+- [ ] El archivo final ya sale censurado antes del upload

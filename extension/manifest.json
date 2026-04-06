@@ -1,0 +1,26 @@
+{
+  "manifest_version": 3,
+  "name": "Pre-Upload Mosaic Censor",
+  "version": "1.0.3",
+  "description": "Intercepts image uploads, opens an editor, and applies mosaic censorship before upload.",
+  "icons": {
+    "16": "icon.ico",
+    "32": "icon.ico",
+    "48": "icon.ico",
+    "128": "icon.ico"
+  },
+  "permissions": [],
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content.js"],
+      "run_at": "document_start"
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": ["editor.html", "editor.css", "editor.js", "icon.ico"],
+      "matches": ["<all_urls>"]
+    }
+  ]
+}

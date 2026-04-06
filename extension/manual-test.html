@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Prueba manual - Pre-Upload Mosaic Censor</title>
+    <style>
+      body { font-family: system-ui, sans-serif; margin: 2rem; }
+      .card { max-width: 900px; padding: 1rem; border: 1px solid #ddd; border-radius: 8px; }
+      .preview { margin-top: 1rem; display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; }
+      .thumb { border: 1px solid #ccc; border-radius: 6px; padding: 8px; }
+      img { max-width: 100%; border: 1px solid #ccc; border-radius: 6px; }
+      .muted { color: #666; }
+    </style>
+  </head>
+  <body>
+    <div class="card">
+      <h1>Prueba manual de intercepción múltiple</h1>
+      <p class="muted">Selecciona varias imágenes. La extensión debe abrir un solo editor para navegar y censurar todas.</p>
+
+      <input id="fileInput" type="file" accept="image/*" multiple />
+      <button id="submitBtn" type="button">Simular upload</button>
+
+      <p><strong>Total en input:</strong> <span id="fileCount">0</span></p>
+      <div id="previewGrid" class="preview"></div>
+    </div>
+
+    <script>
+      const fileInput = document.getElementById('fileInput');
+      const fileCount = document.getElementById('fileCount');
+      const previewGrid = document.getElementById('previewGrid');
+      const submitBtn = document.getElementById('submitBtn');
+
+      function refreshPreview() {
+        const files = Array.from(fileInput.files || []);
+        fileCount.textContent = String(files.length);
+        previewGrid.innerHTML = '';
+
+        files.forEach((f) => {
+          const card = document.createElement('div');
+          card.className = 'thumb';
+          const info = document.createElement('p');
+          info.textContent = `${f.name} — ${f.type} — ${f.size} bytes`;
+          const img = document.createElement('img');
+          img.alt = f.name;
+          card.appendChild(info);
+          card.appendChild(img);
+          previewGrid.appendChild(card);
+
+          const reader = new FileReader();
+          reader.onload = () => {
+            img.src = reader.result;
+          };
+          reader.readAsDataURL(f);
+        });
+      }
+
+      fileInput.addEventListener('change', refreshPreview);
+      submitBtn.addEventListener('click', () => {
+        const files = Array.from(fileInput.files || []);
+        if (!files.length) {
+          alert('No hay archivos para subir.');
+          return;
+        }
+        alert(`Archivos listos para upload: ${files.length}`);
+      });
+    </script>
+  </body>
+</html>

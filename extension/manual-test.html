@@ -6,58 +6,63 @@
     <title>Prueba manual - Pre-Upload Mosaic Censor</title>
     <style>
       body { font-family: system-ui, sans-serif; margin: 2rem; }
-      .card { max-width: 700px; padding: 1rem; border: 1px solid #ddd; border-radius: 8px; }
-      .preview { margin-top: 1rem; }
+      .card { max-width: 900px; padding: 1rem; border: 1px solid #ddd; border-radius: 8px; }
+      .preview { margin-top: 1rem; display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; }
+      .thumb { border: 1px solid #ccc; border-radius: 6px; padding: 8px; }
       img { max-width: 100%; border: 1px solid #ccc; border-radius: 6px; }
       .muted { color: #666; }
     </style>
   </head>
   <body>
     <div class="card">
-      <h1>Prueba manual de intercepción de archivo</h1>
-      <p class="muted">Selecciona una imagen. La extensión debe abrir el editor antes de que el input quede cargado.</p>
+      <h1>Prueba manual de intercepción múltiple</h1>
+      <p class="muted">Selecciona varias imágenes. La extensión debe abrir un solo editor para navegar y censurar todas.</p>
 
-      <input id="fileInput" type="file" accept="image/*" />
+      <input id="fileInput" type="file" accept="image/*" multiple />
       <button id="submitBtn" type="button">Simular upload</button>
 
-      <div class="preview">
-        <p><strong>Resultado en el input:</strong> <span id="fileInfo">(sin archivo)</span></p>
-        <img id="imgPreview" alt="Preview" hidden />
-      </div>
+      <p><strong>Total en input:</strong> <span id="fileCount">0</span></p>
+      <div id="previewGrid" class="preview"></div>
     </div>
 
     <script>
       const fileInput = document.getElementById('fileInput');
-      const fileInfo = document.getElementById('fileInfo');
-      const imgPreview = document.getElementById('imgPreview');
+      const fileCount = document.getElementById('fileCount');
+      const previewGrid = document.getElementById('previewGrid');
       const submitBtn = document.getElementById('submitBtn');
 
       function refreshPreview() {
-        const f = fileInput.files && fileInput.files[0];
-        if (!f) {
-          fileInfo.textContent = '(sin archivo)';
-          imgPreview.hidden = true;
-          imgPreview.removeAttribute('src');
-          return;
-        }
+        const files = Array.from(fileInput.files || []);
+        fileCount.textContent = String(files.length);
+        previewGrid.innerHTML = '';
 
-        fileInfo.textContent = `${f.name} — ${f.type} — ${f.size} bytes`;
-        const reader = new FileReader();
-        reader.onload = () => {
-          imgPreview.src = reader.result;
-          imgPreview.hidden = false;
-        };
-        reader.readAsDataURL(f);
+        files.forEach((f) => {
+          const card = document.createElement('div');
+          card.className = 'thumb';
+          const info = document.createElement('p');
+          info.textContent = `${f.name} — ${f.type} — ${f.size} bytes`;
+          const img = document.createElement('img');
+          img.alt = f.name;
+          card.appendChild(info);
+          card.appendChild(img);
+          previewGrid.appendChild(card);
+
+          const reader = new FileReader();
+          reader.onload = () => {
+            img.src = reader.result;
+          };
+          reader.readAsDataURL(f);
+        });
       }
 
       fileInput.addEventListener('change', refreshPreview);
       submitBtn.addEventListener('click', () => {
-        const f = fileInput.files && fileInput.files[0];
-        if (!f) {
-          alert('No hay archivo para subir.');
+        const files = Array.from(fileInput.files || []);
+        if (!files.length) {
+          alert('No hay archivos para subir.');
           return;
         }
-        alert(`Archivo listo para upload: ${f.name}\nTipo: ${f.type}\nTamaño: ${f.size} bytes`);
+        alert(`Archivos listos para upload: ${files.length}`);
       });
     </script>
   </body>

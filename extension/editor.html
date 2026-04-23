@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Mosaic Censorship Editor</title>
+    <link rel="stylesheet" href="editor.css" />
+  </head>
+  <body>
+    <div class="editor-shell" role="dialog" aria-modal="true" aria-label="Mosaic censorship editor">
+      <header class="toolbar">
+        <div class="toolbar__left">
+          <h1>Mosaic Censorship Editor</h1>
+          <p id="fileName" class="muted"></p>
+        </div>
+        <div class="toolbar__right">
+          <div class="nav-controls">
+            <button id="prevBtn" type="button" class="ghost">◀ Prev</button>
+            <span id="imageIndex" class="index-pill">1 / 1</span>
+            <button id="nextBtn" type="button" class="ghost">Next ▶</button>
+          </div>
+          <label class="mosaic-control" for="mosaicSizeInput">
+            Mosaic size
+            <input id="mosaicSizeInput" type="number" min="2" max="200" value="15" />
+          </label>
+          <button id="undoBtn" type="button">Undo Last</button>
+          <button id="cancelBtn" type="button" class="ghost">Cancel</button>
+          <button id="confirmBtn" type="button" class="primary">Confirm All</button>
+        </div>
+      </header>
+
+      <main class="canvas-wrap">
+        <canvas id="previewCanvas"></canvas>
+      </main>
+
+      <footer class="status-bar">
+        <span>Click and drag to add a censorship rectangle.</span>
+        <span>Rectangles: <strong id="rectCount">0</strong></span>
+        <span class="credit">Creado por <strong>HeyKhana</strong></span>
+      </footer>
+    </div>
+
+    <script src="editor.js"></script>
+  </body>
+</html>

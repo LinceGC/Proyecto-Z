@@ -75,6 +75,27 @@ body {
   font-size: 0.8rem;
 }
 
+.mode-toggle {
+  display: inline-flex;
+  border: 1px solid #4b5563;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.mode-btn {
+  border: none;
+  padding: 8px 10px;
+  background: #111827;
+  color: var(--muted);
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.mode-btn--active {
+  background: #2563eb;
+  color: #fff;
+}
+
 .mosaic-control {
   display: flex;
   flex-direction: column;

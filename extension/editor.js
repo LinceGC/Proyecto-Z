@@ -1,11 +1,13 @@
 (() => {
   const MAX_PREVIEW_W = 1200;
   const MAX_PREVIEW_H = 850;
+  const CROP_SIZE = 1024;
 
   const state = {
     images: [],
     currentIndex: 0,
     drag: null,
+    mode: 'censor',
     mosaicSize: 15
   };
 
@@ -14,12 +16,16 @@
   const fileNameEl = document.getElementById('fileName');
   const rectCountEl = document.getElementById('rectCount');
   const imageIndexEl = document.getElementById('imageIndex');
+  const modeHelpEl = document.getElementById('modeHelp');
+
   const undoBtn = document.getElementById('undoBtn');
   const prevBtn = document.getElementById('prevBtn');
   const nextBtn = document.getElementById('nextBtn');
   const cancelBtn = document.getElementById('cancelBtn');
   const confirmBtn = document.getElementById('confirmBtn');
   const mosaicSizeInput = document.getElementById('mosaicSizeInput');
+  const modeCensorBtn = document.getElementById('modeCensorBtn');
+  const modeCropBtn = document.getElementById('modeCropBtn');
 
   const normalizeRect = (rect) => {
     const x = Math.min(rect.x1, rect.x2);
@@ -74,12 +80,25 @@
     );
   };
 
+  const getCropSizeDisplay = (imgState) => Math.round(CROP_SIZE * imgState.previewScale);
+
+  const clampCropPreviewPosition = (imgState, x, y) => {
+    const size = getCropSizeDisplay(imgState);
+    const maxX = Math.max(0, imgState.previewWidth - size);
+    const maxY = Math.max(0, imgState.previewHeight - size);
+    return {
+      x: Math.max(0, Math.min(maxX, x)),
+      y: Math.max(0, Math.min(maxY, y))
+    };
+  };
+
   const buildCompositedOriginal = (imgState) => {
+    const sourceCanvas = imgState.croppedOriginalCanvas || imgState.originalCanvas;
     const compositeCanvas = document.createElement('canvas');
-    compositeCanvas.width = imgState.originalCanvas.width;
-    compositeCanvas.height = imgState.originalCanvas.height;
+    compositeCanvas.width = sourceCanvas.width;
+    compositeCanvas.height = sourceCanvas.height;
     const compositeCtx = compositeCanvas.getContext('2d');
-    compositeCtx.drawImage(imgState.originalCanvas, 0, 0);
+    compositeCtx.drawImage(sourceCanvas, 0, 0);
 
     for (const rectRaw of imgState.rectangles) {
       const rect = toOriginalRect(imgState, rectRaw);
@@ -90,9 +109,44 @@
     return compositeCanvas;
   };
 
+  const setMode = (mode) => {
+    state.mode = mode;
+    modeCensorBtn.classList.toggle('mode-btn--active', mode === 'censor');
+    modeCropBtn.classList.toggle('mode-btn--active', mode === 'crop');
+    modeHelpEl.textContent =
+      mode === 'crop'
+        ? 'Crop mode: drag the red 1024x1024 square. It stays inside the image bounds.'
+        : 'Censor mode: click and drag to add a censorship rectangle.';
+    render();
+  };
+
+  const ensureCropBoxForCurrent = () => {
+    const current = getCurrent();
+    if (!current) return;
+
+    const size = getCropSizeDisplay(current);
+    if (size <= 0 || size > current.previewWidth || size > current.previewHeight) {
+      current.cropBox = null;
+      return;
+    }
+
+    if (!current.cropBox) {
+      const centered = clampCropPreviewPosition(
+        current,
+        Math.round((current.previewWidth - size) / 2),
+        Math.round((current.previewHeight - size) / 2)
+      );
+      current.cropBox = { x: centered.x, y: centered.y };
+    } else {
+      current.cropBox = clampCropPreviewPosition(current, current.cropBox.x, current.cropBox.y);
+    }
+  };
+
   const render = () => {
     const current = getCurrent();
     if (!current) return;
+
+    ensureCropBoxForCurrent();
 
     canvas.width = current.previewWidth;
     canvas.height = current.previewHeight;
@@ -102,7 +156,16 @@
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.drawImage(compositeOriginal, 0, 0, canvas.width, canvas.height);
 
-    if (state.drag) {
+    if (state.mode === 'crop' && current.cropBox) {
+      const size = getCropSizeDisplay(current);
+      ctx.save();
+      ctx.strokeStyle = '#ef4444';
+      ctx.lineWidth = 2;
+      ctx.strokeRect(current.cropBox.x, current.cropBox.y, size, size);
+      ctx.restore();
+    }
+
+    if (state.mode === 'censor' && state.drag) {
       const preview = clampRectToBounds(normalizeRect(state.drag), canvas.width, canvas.height);
       if (preview.w >= 1 && preview.h >= 1) {
         ctx.save();
@@ -139,22 +202,37 @@
       image.src = dataUrl;
     });
 
-    const previewScale = Math.min(1, MAX_PREVIEW_W / img.width, MAX_PREVIEW_H / img.height);
-    const previewWidth = Math.max(1, Math.round(img.width * previewScale));
-    const previewHeight = Math.max(1, Math.round(img.height * previewScale));
-
-    const originalCanvas = document.createElement('canvas');
+    let originalCanvas = document.createElement('canvas');
     originalCanvas.width = img.width;
     originalCanvas.height = img.height;
     originalCanvas.getContext('2d').drawImage(img, 0, 0);
 
+    let effectiveCanvas = originalCanvas;
+    if (img.width >= CROP_SIZE && img.height >= CROP_SIZE) {
+      const startX = Math.round((img.width - CROP_SIZE) / 2);
+      const startY = Math.round((img.height - CROP_SIZE) / 2);
+      const cropped = document.createElement('canvas');
+      cropped.width = CROP_SIZE;
+      cropped.height = CROP_SIZE;
+      const cctx = cropped.getContext('2d');
+      cctx.drawImage(originalCanvas, startX, startY, CROP_SIZE, CROP_SIZE, 0, 0, CROP_SIZE, CROP_SIZE);
+      effectiveCanvas = cropped;
+    }
+
+    const previewScale = Math.min(1, MAX_PREVIEW_W / effectiveCanvas.width, MAX_PREVIEW_H / effectiveCanvas.height);
+    const previewWidth = Math.max(1, Math.round(effectiveCanvas.width * previewScale));
+    const previewHeight = Math.max(1, Math.round(effectiveCanvas.height * previewScale));
+
     return {
       name: name || 'image.png',
       originalCanvas,
+      croppedOriginalCanvas: effectiveCanvas !== originalCanvas ? effectiveCanvas : null,
       previewScale,
       previewWidth,
       previewHeight,
-      rectangles: []
+      rectangles: [],
+      cropBox: null,
+      cropDrag: null
     };
   };
 
@@ -163,6 +241,34 @@
     state.currentIndex = nextIndex;
     state.drag = null;
     render();
+  };
+
+  const applyCropForImage = (imgState) => {
+    if (!imgState.cropBox) return;
+    const sizeDisplay = getCropSizeDisplay(imgState);
+    if (sizeDisplay <= 0) return;
+
+    const x = Math.round(imgState.cropBox.x / imgState.previewScale);
+    const y = Math.round(imgState.cropBox.y / imgState.previewScale);
+
+    const cropped = document.createElement('canvas');
+    cropped.width = CROP_SIZE;
+    cropped.height = CROP_SIZE;
+    const cctx = cropped.getContext('2d');
+
+    const source = imgState.croppedOriginalCanvas || imgState.originalCanvas;
+    if (x + CROP_SIZE > source.width || y + CROP_SIZE > source.height) {
+      return;
+    }
+
+    cctx.drawImage(source, x, y, CROP_SIZE, CROP_SIZE, 0, 0, CROP_SIZE, CROP_SIZE);
+    imgState.croppedOriginalCanvas = cropped;
+
+    imgState.previewScale = Math.min(1, MAX_PREVIEW_W / CROP_SIZE, MAX_PREVIEW_H / CROP_SIZE);
+    imgState.previewWidth = Math.max(1, Math.round(CROP_SIZE * imgState.previewScale));
+    imgState.previewHeight = Math.max(1, Math.round(CROP_SIZE * imgState.previewScale));
+    imgState.rectangles = [];
+    imgState.cropBox = null;
   };
 
   window.addEventListener('message', async (event) => {
@@ -181,6 +287,7 @@
       state.images = imageStates;
       state.currentIndex = 0;
       state.drag = null;
+      setMode('censor');
       render();
     } catch (error) {
       console.error('Failed to initialize editor images:', error);
@@ -191,14 +298,38 @@
   canvas.addEventListener('mousedown', (event) => {
     const current = getCurrent();
     if (!current) return;
+
     const p = getCanvasPoint(event);
+
+    if (state.mode === 'crop') {
+      ensureCropBoxForCurrent();
+      if (!current.cropBox) return;
+      const size = getCropSizeDisplay(current);
+      if (p.x >= current.cropBox.x && p.x <= current.cropBox.x + size && p.y >= current.cropBox.y && p.y <= current.cropBox.y + size) {
+        current.cropDrag = { offsetX: p.x - current.cropBox.x, offsetY: p.y - current.cropBox.y };
+      }
+      return;
+    }
+
     state.drag = { x1: p.x, y1: p.y, x2: p.x, y2: p.y };
     render();
   });
 
   window.addEventListener('mousemove', (event) => {
-    if (!state.drag) return;
+    const current = getCurrent();
+    if (!current) return;
+
     const p = getCanvasPoint(event);
+
+    if (state.mode === 'crop' && current.cropDrag && current.cropBox) {
+      const next = clampCropPreviewPosition(current, p.x - current.cropDrag.offsetX, p.y - current.cropDrag.offsetY);
+      current.cropBox.x = next.x;
+      current.cropBox.y = next.y;
+      render();
+      return;
+    }
+
+    if (!state.drag || state.mode !== 'censor') return;
     state.drag.x2 = p.x;
     state.drag.y2 = p.y;
     render();
@@ -206,9 +337,22 @@
 
   window.addEventListener('mouseup', (event) => {
     const current = getCurrent();
-    if (!state.drag || !current) return;
+    if (!current) return;
 
     const p = getCanvasPoint(event);
+
+    if (state.mode === 'crop') {
+      if (current.cropDrag) {
+        const next = clampCropPreviewPosition(current, p.x - current.cropDrag.offsetX, p.y - current.cropDrag.offsetY);
+        current.cropBox.x = next.x;
+        current.cropBox.y = next.y;
+      }
+      current.cropDrag = null;
+      render();
+      return;
+    }
+
+    if (!state.drag) return;
     state.drag.x2 = p.x;
     state.drag.y2 = p.y;
 
@@ -239,11 +383,15 @@
 
   undoBtn.addEventListener('click', () => {
     const current = getCurrent();
+    if (state.mode !== 'censor') return;
     if (current && current.rectangles.length > 0) {
       current.rectangles.pop();
       render();
     }
   });
+
+  modeCensorBtn.addEventListener('click', () => setMode('censor'));
+  modeCropBtn.addEventListener('click', () => setMode('crop'));
 
   prevBtn.addEventListener('click', () => switchImage(state.currentIndex - 1));
   nextBtn.addEventListener('click', () => switchImage(state.currentIndex + 1));
@@ -251,7 +399,7 @@
   window.addEventListener('keydown', (event) => {
     const current = getCurrent();
 
-    if (event.key.toLowerCase() === 'r' && current && current.rectangles.length > 0) {
+    if (event.key.toLowerCase() === 'r' && state.mode === 'censor' && current && current.rectangles.length > 0) {
       current.rectangles.pop();
       render();
     }
@@ -277,6 +425,12 @@
     if (!state.images.length) {
       window.parent.postMessage({ type: 'MOSAIC_EDITOR_CANCEL' }, '*');
       return;
+    }
+
+    for (const imgState of state.images) {
+      if (imgState.cropBox) {
+        applyCropForImage(imgState);
+      }
     }
 
     const outputFiles = [];

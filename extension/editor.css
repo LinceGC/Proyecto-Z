@@ -96,6 +96,14 @@ body {
   color: #fff;
 }
 
+.crop-action {
+  background: #dc2626;
+}
+
+.crop-action:disabled {
+  background: #7f1d1d;
+}
+
 .mosaic-control {
   display: flex;
   flex-direction: column;

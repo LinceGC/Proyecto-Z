@@ -26,6 +26,7 @@
   const mosaicSizeInput = document.getElementById('mosaicSizeInput');
   const modeCensorBtn = document.getElementById('modeCensorBtn');
   const modeCropBtn = document.getElementById('modeCropBtn');
+  const applyCropBtn = document.getElementById('applyCropBtn');
 
   const normalizeRect = (rect) => {
     const x = Math.min(rect.x1, rect.x2);
@@ -113,9 +114,10 @@
     state.mode = mode;
     modeCensorBtn.classList.toggle('mode-btn--active', mode === 'censor');
     modeCropBtn.classList.toggle('mode-btn--active', mode === 'crop');
+    applyCropBtn.hidden = mode !== 'crop';
     modeHelpEl.textContent =
       mode === 'crop'
-        ? 'Crop mode: drag the red 1024x1024 square. It stays inside the image bounds.'
+        ? 'Crop mode: drag the red 1024x1024 square and click Apply Crop Preview.'
         : 'Censor mode: click and drag to add a censorship rectangle.';
     render();
   };
@@ -182,6 +184,7 @@
     imageIndexEl.textContent = `${state.currentIndex + 1} / ${state.images.length}`;
     prevBtn.disabled = state.currentIndex === 0;
     nextBtn.disabled = state.currentIndex >= state.images.length - 1;
+    applyCropBtn.disabled = state.mode !== 'crop' || !current.cropBox;
   };
 
   const getCanvasPoint = (event) => {
@@ -380,6 +383,15 @@
 
   modeCensorBtn.addEventListener('click', () => setMode('censor'));
   modeCropBtn.addEventListener('click', () => setMode('crop'));
+
+  applyCropBtn.addEventListener('click', () => {
+    const current = getCurrent();
+    if (!current || !current.cropBox) return;
+    applyCropForImage(current);
+    state.mode = 'censor';
+    setMode('censor');
+    render();
+  });
 
   prevBtn.addEventListener('click', () => switchImage(state.currentIndex - 1));
   nextBtn.addEventListener('click', () => switchImage(state.currentIndex + 1));

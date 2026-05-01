@@ -202,31 +202,19 @@
       image.src = dataUrl;
     });
 
-    let originalCanvas = document.createElement('canvas');
+    const originalCanvas = document.createElement('canvas');
     originalCanvas.width = img.width;
     originalCanvas.height = img.height;
     originalCanvas.getContext('2d').drawImage(img, 0, 0);
 
-    let effectiveCanvas = originalCanvas;
-    if (img.width >= CROP_SIZE && img.height >= CROP_SIZE) {
-      const startX = Math.round((img.width - CROP_SIZE) / 2);
-      const startY = Math.round((img.height - CROP_SIZE) / 2);
-      const cropped = document.createElement('canvas');
-      cropped.width = CROP_SIZE;
-      cropped.height = CROP_SIZE;
-      const cctx = cropped.getContext('2d');
-      cctx.drawImage(originalCanvas, startX, startY, CROP_SIZE, CROP_SIZE, 0, 0, CROP_SIZE, CROP_SIZE);
-      effectiveCanvas = cropped;
-    }
-
-    const previewScale = Math.min(1, MAX_PREVIEW_W / effectiveCanvas.width, MAX_PREVIEW_H / effectiveCanvas.height);
-    const previewWidth = Math.max(1, Math.round(effectiveCanvas.width * previewScale));
-    const previewHeight = Math.max(1, Math.round(effectiveCanvas.height * previewScale));
+    const previewScale = Math.min(1, MAX_PREVIEW_W / originalCanvas.width, MAX_PREVIEW_H / originalCanvas.height);
+    const previewWidth = Math.max(1, Math.round(originalCanvas.width * previewScale));
+    const previewHeight = Math.max(1, Math.round(originalCanvas.height * previewScale));
 
     return {
       name: name || 'image.png',
       originalCanvas,
-      croppedOriginalCanvas: effectiveCanvas !== originalCanvas ? effectiveCanvas : null,
+      croppedOriginalCanvas: null,
       previewScale,
       previewWidth,
       previewHeight,
@@ -256,7 +244,7 @@
     cropped.height = CROP_SIZE;
     const cctx = cropped.getContext('2d');
 
-    const source = imgState.croppedOriginalCanvas || imgState.originalCanvas;
+    const source = imgState.originalCanvas;
     if (x + CROP_SIZE > source.width || y + CROP_SIZE > source.height) {
       return;
     }

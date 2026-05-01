@@ -43,13 +43,14 @@ Al presionar el botón de la extensión, se abre un popup con referencia al crea
 2. Selecciona varias imágenes en un input con `multiple`.
 3. Debe abrirse **un solo editor** con navegación por imagen (Prev/Next).
 4. Puedes alternar entre **Censor mode** y **Crop mode** (crop fijo 1024x1024).
-5. En modo Crop, mueve el cuadro rojo (si la imagen soporta 1024x1024).
-6. En modo Censor, dibuja rectángulos con mouse:
+5. En modo Crop, la vista sigue mostrando la imagen original; mueve el cuadro rojo (si la imagen soporta 1024x1024).
+6. El recorte recién se aplica al confirmar (**Confirm All**).
+7. En modo Censor, dibuja rectángulos con mouse:
    - `mousedown` inicia
    - `mousemove` previsualiza
    - `mouseup` confirma el rectángulo
-7. Usa **Undo Last** o tecla `R` para deshacer en la imagen actual (solo modo Censor).
-8. Pulsa **Confirm All** para exportar todas las imágenes editadas y reemplazar el input.
+8. Usa **Undo Last** o tecla `R` para deshacer en la imagen actual (solo modo Censor).
+9. Pulsa **Confirm All** para exportar todas las imágenes editadas y reemplazar el input.
 
 ## Checklist rápido de validación
 

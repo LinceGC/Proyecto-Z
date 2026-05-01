@@ -81,7 +81,7 @@
     );
   };
 
-  const getCropSizeDisplay = (imgState) => Math.round(CROP_SIZE * imgState.previewScale);
+  const getCropSizeDisplay = (imgState) => CROP_SIZE * imgState.previewScale;
 
   const clampCropPreviewPosition = (imgState, x, y) => {
     const size = getCropSizeDisplay(imgState);
@@ -250,15 +250,18 @@
     const sizeDisplay = getCropSizeDisplay(imgState);
     if (sizeDisplay <= 0) return;
 
-    const rawX = Math.floor(imgState.cropBox.x / imgState.previewScale);
-    const rawY = Math.floor(imgState.cropBox.y / imgState.previewScale);
+    const source = imgState.originalCanvas;
+    const scaleX = source.width / imgState.previewWidth;
+    const scaleY = source.height / imgState.previewHeight;
+
+    const rawX = Math.round(imgState.cropBox.x * scaleX);
+    const rawY = Math.round(imgState.cropBox.y * scaleY);
 
     const cropped = document.createElement('canvas');
     cropped.width = CROP_SIZE;
     cropped.height = CROP_SIZE;
     const cctx = cropped.getContext('2d');
 
-    const source = imgState.originalCanvas;
     const maxX = source.width - CROP_SIZE;
     const maxY = source.height - CROP_SIZE;
     if (maxX < 0 || maxY < 0) return;

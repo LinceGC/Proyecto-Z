@@ -50,8 +50,9 @@ Al presionar el botón de la extensión, se abre un popup con referencia al crea
    - `mousedown` inicia
    - `mousemove` previsualiza
    - `mouseup` confirma el rectángulo
-9. Usa **Undo Last** o tecla `R` para deshacer en la imagen actual (solo modo Censor).
-10. Pulsa **Confirm All** para exportar todas las imágenes editadas y reemplazar el input.
+9. En modo Censor, usa **Undo Last** o tecla `R` para deshacer el último rectángulo.
+10. En modo Crop, la tecla `R` resetea el recorte y vuelve al estado original de la imagen.
+11. Pulsa **Confirm All** para exportar todas las imágenes editadas y reemplazar el input.
 
 ## Checklist rápido de validación
 

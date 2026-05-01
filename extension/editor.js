@@ -227,6 +227,17 @@
     };
   };
 
+
+  const resetCropForImage = (imgState) => {
+    imgState.croppedOriginalCanvas = null;
+    imgState.previewScale = Math.min(1, MAX_PREVIEW_W / imgState.originalCanvas.width, MAX_PREVIEW_H / imgState.originalCanvas.height);
+    imgState.previewWidth = Math.max(1, Math.round(imgState.originalCanvas.width * imgState.previewScale));
+    imgState.previewHeight = Math.max(1, Math.round(imgState.originalCanvas.height * imgState.previewScale));
+    imgState.cropBox = null;
+    imgState.cropDrag = null;
+    imgState.rectangles = [];
+  };
+
   const switchImage = (nextIndex) => {
     if (nextIndex < 0 || nextIndex >= state.images.length) return;
     state.currentIndex = nextIndex;
@@ -239,8 +250,8 @@
     const sizeDisplay = getCropSizeDisplay(imgState);
     if (sizeDisplay <= 0) return;
 
-    const x = Math.round(imgState.cropBox.x / imgState.previewScale);
-    const y = Math.round(imgState.cropBox.y / imgState.previewScale);
+    const rawX = Math.floor(imgState.cropBox.x / imgState.previewScale);
+    const rawY = Math.floor(imgState.cropBox.y / imgState.previewScale);
 
     const cropped = document.createElement('canvas');
     cropped.width = CROP_SIZE;
@@ -248,9 +259,12 @@
     const cctx = cropped.getContext('2d');
 
     const source = imgState.originalCanvas;
-    if (x + CROP_SIZE > source.width || y + CROP_SIZE > source.height) {
-      return;
-    }
+    const maxX = source.width - CROP_SIZE;
+    const maxY = source.height - CROP_SIZE;
+    if (maxX < 0 || maxY < 0) return;
+
+    const x = Math.max(0, Math.min(maxX, rawX));
+    const y = Math.max(0, Math.min(maxY, rawY));
 
     cctx.drawImage(source, x, y, CROP_SIZE, CROP_SIZE, 0, 0, CROP_SIZE, CROP_SIZE);
     imgState.croppedOriginalCanvas = cropped;
@@ -399,9 +413,16 @@
   window.addEventListener('keydown', (event) => {
     const current = getCurrent();
 
-    if (event.key.toLowerCase() === 'r' && state.mode === 'censor' && current && current.rectangles.length > 0) {
-      current.rectangles.pop();
-      render();
+    if (event.key.toLowerCase() === 'r') {
+      if (state.mode === 'censor' && current && current.rectangles.length > 0) {
+        current.rectangles.pop();
+        render();
+      }
+
+      if (state.mode === 'crop' && current) {
+        resetCropForImage(current);
+        render();
+      }
     }
 
     if (event.key === 'ArrowLeft') {

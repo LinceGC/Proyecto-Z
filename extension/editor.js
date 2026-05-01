@@ -76,8 +76,8 @@
         w: Math.round(n.w / scale),
         h: Math.round(n.h / scale)
       },
-      imgState.originalCanvas.width,
-      imgState.originalCanvas.height
+      (imgState.croppedOriginalCanvas || imgState.originalCanvas).width,
+      (imgState.croppedOriginalCanvas || imgState.originalCanvas).height
     );
   };
 
@@ -250,7 +250,7 @@
     const sizeDisplay = getCropSizeDisplay(imgState);
     if (sizeDisplay <= 0) return;
 
-    const source = imgState.originalCanvas;
+    const source = imgState.croppedOriginalCanvas || imgState.originalCanvas;
     const scaleX = source.width / imgState.previewWidth;
     const scaleY = source.height / imgState.previewHeight;
 

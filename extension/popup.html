@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>HeyCensor</title>
+    <style>
+      body {
+        margin: 0;
+        width: 280px;
+        font-family: Inter, system-ui, sans-serif;
+        background: #111827;
+        color: #f9fafb;
+      }
+      .box {
+        padding: 14px;
+      }
+      h1 {
+        margin: 0 0 6px;
+        font-size: 1rem;
+      }
+      p {
+        margin: 0;
+        color: #cbd5e1;
+        font-size: 0.9rem;
+        line-height: 1.35;
+      }
+      .badge {
+        margin-top: 10px;
+        display: inline-block;
+        padding: 4px 8px;
+        border-radius: 999px;
+        background: #1f2937;
+        border: 1px solid #334155;
+        color: #c7d2fe;
+        font-size: 0.8rem;
+      }
+      .toggle-row {
+        margin-top: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        background: #1f2937;
+        border: 1px solid #334155;
+        border-radius: 10px;
+        padding: 8px 10px;
+      }
+      .toggle-row label {
+        font-size: 0.9rem;
+      }
+      #status {
+        margin-top: 8px;
+        font-size: 0.8rem;
+        color: #93c5fd;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="box">
+      <h1>HeyCensor</h1>
+      <p>Editor de censura previa al upload para imágenes.</p>
+      <span class="badge">Creado por HeyKhana</span>
+
+      <div class="toggle-row">
+        <label for="enabledToggle">Extensión activa</label>
+        <input id="enabledToggle" type="checkbox" />
+      </div>
+      <div id="status">Cargando...</div>
+    </div>
+
+    <script src="popup.js"></script>
+  </body>
+</html>

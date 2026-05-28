@@ -451,12 +451,6 @@
       return;
     }
 
-    for (const imgState of state.images) {
-      if (imgState.cropBox) {
-        applyCropForImage(imgState);
-      }
-    }
-
     const outputFiles = [];
 
     for (const imgState of state.images) {
